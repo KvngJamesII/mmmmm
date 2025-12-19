@@ -1,18 +1,19 @@
 {
   "name": "luca-anonymous-web",
   "version": "1.0.0",
-  "description": "Anonymous messaging web interface for LUCA Bot",
+  "description": "LUCA Bot Anonymous Messaging Web Interface",
   "main": "api/index.js",
   "scripts": {
-    "start": "node api/index.js",
-    "dev": "node api/index.js"
+    "dev": "node api/index.js",
+    "start": "node api/index.js"
   },
-  "keywords": ["anonymous", "messaging", "whatsapp"],
-  "author": "iDev Team",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "body-parser": "^1.20.2"
+    "body-parser": "^1.20.2",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=14.x"
   }
 }
