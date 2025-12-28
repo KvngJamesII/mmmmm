@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 
@@ -10,29 +11,73 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// In-memory storage (will persist in bot's memory instead)
-// This is just for the web server to validate and queue messages
+// Secret key for signing sessions (in production, use env variable)
+const SECRET_KEY = process.env.SESSION_SECRET || 'luca-anonymous-secret-2024';
+
+// In-memory storage - reinitializes on serverless cold starts, but that's OK now
+// because we validate sessions using signatures
 const sessions = new Map();
 const messageQueues = new Map();
+const endedSessions = new Set(); // Track explicitly ended sessions
+
+// Helper: Generate signature for session validation
+const generateSignature = (sessionId, groupJid, createdAt) => {
+  const data = `${sessionId}:${groupJid}:${createdAt}`;
+  return crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex').substring(0, 16);
+};
+
+// Helper: Validate session token
+const validateSessionToken = (token) => {
+  try {
+    // Token format: sessionId_groupJid_createdAt_signature
+    const parts = token.split('_');
+    if (parts.length !== 4) return null;
+    
+    const [sessionId, groupJidEncoded, createdAt, signature] = parts;
+    const groupJid = Buffer.from(groupJidEncoded, 'base64').toString('utf-8');
+    
+    // Check signature
+    const expectedSig = generateSignature(sessionId, groupJid, createdAt);
+    if (signature !== expectedSig) return null;
+    
+    // Check if session was explicitly ended
+    if (endedSessions.has(sessionId)) return null;
+    
+    // Check 20-minute expiry
+    const age = Date.now() - parseInt(createdAt);
+    const TWENTY_MINUTES = 20 * 60 * 1000;
+    if (age > TWENTY_MINUTES) return null;
+    
+    return { sessionId, groupJid, createdAt: parseInt(createdAt) };
+  } catch (e) {
+    return null;
+  }
+};
 
 // Create new anonymous session
 app.post('/api/session/create', (req, res) => {
-  const { sessionId, groupJid } = req.body;
+  const { sessionId, groupJid, createdAt } = req.body;
 
   if (!sessionId || !groupJid) {
     return res.status(400).json({ error: 'Missing sessionId or groupJid' });
   }
 
+  const timestamp = createdAt || Date.now();
+  const signature = generateSignature(sessionId, groupJid, timestamp);
+  const groupJidEncoded = Buffer.from(groupJid).toString('base64');
+  const token = `${sessionId}_${groupJidEncoded}_${timestamp}_${signature}`;
+
   sessions.set(sessionId, {
     groupJid,
     active: true,
-    createdAt: Date.now(),
-    messageCount: 0
+    createdAt: timestamp,
+    messageCount: 0,
+    lastActivity: timestamp
   });
 
   messageQueues.set(sessionId, []);
 
-  res.json({ success: true, sessionId });
+  res.json({ success: true, sessionId, token });
 });
 
 // End anonymous session
@@ -43,26 +88,44 @@ app.post('/api/session/end', (req, res) => {
     return res.status(400).json({ error: 'Missing sessionId' });
   }
 
+  // Add to ended sessions set
+  endedSessions.add(sessionId);
+
   const session = sessions.get(sessionId);
-  if (!session) {
-    return res.status(404).json({ error: 'Session not found' });
+  if (session) {
+    session.active = false;
   }
 
-  session.active = false;
   res.json({ success: true });
 });
 
-// Check if session is active
-app.get('/api/session/:sessionId/status', (req, res) => {
-  const { sessionId } = req.params;
-  const session = sessions.get(sessionId);
-
-  if (!session) {
+// Check if session is active (validates using token from URL)
+app.get('/api/session/:token/status', (req, res) => {
+  const { token } = req.params;
+  
+  // Validate the token
+  const sessionData = validateSessionToken(token);
+  
+  if (!sessionData) {
     return res.json({ active: false, exists: false });
   }
-
+  
+  // Session is valid - ensure it exists in memory
+  if (!sessions.has(sessionData.sessionId)) {
+    sessions.set(sessionData.sessionId, {
+      groupJid: sessionData.groupJid,
+      active: true,
+      createdAt: sessionData.createdAt,
+      messageCount: 0,
+      lastActivity: Date.now()
+    });
+    messageQueues.set(sessionData.sessionId, []);
+  }
+  
+  const session = sessions.get(sessionData.sessionId);
+  
   res.json({
-    active: session.active,
+    active: session.active && !endedSessions.has(sessionData.sessionId),
     exists: true,
     messageCount: session.messageCount
   });
@@ -70,10 +133,10 @@ app.get('/api/session/:sessionId/status', (req, res) => {
 
 // Submit anonymous message
 app.post('/api/message/submit', (req, res) => {
-  const { sessionId, message } = req.body;
+  const { sessionToken, message } = req.body;
 
-  if (!sessionId || !message) {
-    return res.status(400).json({ error: 'Missing sessionId or message' });
+  if (!sessionToken || !message) {
+    return res.status(400).json({ error: 'Missing sessionToken or message' });
   }
 
   if (message.trim().length === 0) {
@@ -84,27 +147,46 @@ app.post('/api/message/submit', (req, res) => {
     return res.status(400).json({ error: 'Message too long (max 1000 characters)' });
   }
 
-  const session = sessions.get(sessionId);
-
-  if (!session) {
-    return res.status(404).json({ error: 'Session not found' });
+  // Validate token
+  const sessionData = validateSessionToken(sessionToken);
+  if (!sessionData) {
+    return res.status(403).json({ error: 'Session has ended or expired' });
   }
+  
+  if (endedSessions.has(sessionData.sessionId)) {
+    return res.status(403).json({ error: 'Session has ended' });
+  }
+
+  // Ensure session exists in memory
+  if (!sessions.has(sessionData.sessionId)) {
+    sessions.set(sessionData.sessionId, {
+      groupJid: sessionData.groupJid,
+      active: true,
+      createdAt: sessionData.createdAt,
+      messageCount: 0,
+      lastActivity: Date.now()
+    });
+    messageQueues.set(sessionData.sessionId, []);
+  }
+
+  const session = sessions.get(sessionData.sessionId);
 
   if (!session.active) {
     return res.status(403).json({ error: 'Session has ended' });
   }
 
-  // Increment message count
+  // Increment message count and update activity
   session.messageCount++;
+  session.lastActivity = Date.now();
 
   // Add message to queue
-  const queue = messageQueues.get(sessionId) || [];
+  const queue = messageQueues.get(sessionData.sessionId) || [];
   queue.push({
     number: session.messageCount,
     message: message.trim(),
     timestamp: Date.now()
   });
-  messageQueues.set(sessionId, queue);
+  messageQueues.set(sessionData.sessionId, queue);
 
   res.json({
     success: true,
@@ -124,7 +206,7 @@ app.get('/api/messages/poll/:sessionId', (req, res) => {
 });
 
 // Serve the anonymous message page
-app.get('/:sessionId', (req, res) => {
+app.get('/:token', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
