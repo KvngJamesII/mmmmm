@@ -16,7 +16,7 @@
       "dest": "/api/index.js"
     },
     {
-      "src": "/([a-z0-9]+)",
+      "src": "/([a-zA-Z0-9_=]+)",
       "dest": "/public/index.html"
     },
     {
