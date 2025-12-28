@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LUCA Anonymous Messages</title>
+    <title>Anonymous Q&A</title>
     <style>
         * {
             margin: 0;
@@ -12,258 +12,244 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(180deg, #f77062 0%, #fe5196 50%, #f77062 100%);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            width: 100%;
-            padding: 40px;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo h1 {
-            color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        .logo p {
-            color: #666;
-            font-size: 1em;
-        }
-
-        .session-ended {
-            text-align: center;
             padding: 40px 20px;
         }
 
-        .session-ended h2 {
-            color: #e74c3c;
-            font-size: 2em;
-            margin-bottom: 15px;
+        .container {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
 
-        .session-ended p {
-            color: #666;
-            font-size: 1.1em;
-            line-height: 1.6;
+        .header-card {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 15px 20px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .session-ended .icon {
-            font-size: 5em;
-            margin-bottom: 20px;
+        .avatar {
+            width: 45px;
+            height: 45px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .form-group {
-            margin-bottom: 25px;
+        .avatar svg {
+            width: 25px;
+            height: 25px;
+            fill: #a0a0a0;
         }
 
-        .form-group label {
-            display: block;
-            color: #333;
+        .header-text {
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 10px;
-            font-size: 1em;
+            color: #1a1a1a;
         }
 
-        .form-group textarea {
+        .message-area {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1em;
+            background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,182,193,0.5) 100%);
+            border-radius: 0 0 20px 20px;
+            min-height: 200px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-area textarea {
+            width: 100%;
+            height: 200px;
+            background: transparent;
+            border: none;
+            padding: 20px;
+            font-size: 16px;
             font-family: inherit;
-            resize: vertical;
-            min-height: 150px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group textarea:focus {
+            resize: none;
+            color: #333;
             outline: none;
-            border-color: #667eea;
         }
 
-        .char-counter {
-            text-align: right;
-            color: #999;
-            font-size: 0.9em;
+        .message-area textarea::placeholder {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        .dice-icon {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            font-size: 28px;
+            opacity: 0.8;
+        }
+
+        .char-count {
+            position: absolute;
+            bottom: 15px;
+            left: 20px;
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        .anonymous-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
             margin-top: 5px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
-        .char-counter.warning {
-            color: #e67e22;
-        }
-
-        .char-counter.error {
-            color: #e74c3c;
-        }
-
-        .btn {
+        .send-btn {
             width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            max-width: 300px;
+            padding: 18px 40px;
+            background: #1a1a1a;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
+            border-radius: 50px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+            transition: transform 0.2s, opacity 0.2s;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        .send-btn:hover {
+            transform: scale(1.02);
         }
 
-        .btn:active {
-            transform: translateY(0);
+        .send-btn:active {
+            transform: scale(0.98);
         }
 
-        .btn:disabled {
-            background: #ccc;
+        .send-btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
-        .alert {
-            padding: 15px;
-            border-radius: 10px;
+        .send-btn.sending {
+            opacity: 0.7;
+        }
+
+        .session-ended {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+        }
+
+        .session-ended .icon {
+            font-size: 60px;
             margin-bottom: 20px;
-            animation: slideIn 0.3s ease-out;
         }
 
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s linear infinite;
-            margin-left: 10px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .info-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            border-left: 4px solid #667eea;
-        }
-
-        .info-box h3 {
-            color: #333;
+        .session-ended h2 {
+            font-size: 24px;
             margin-bottom: 10px;
-            font-size: 1.1em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .info-box ul {
-            color: #666;
-            padding-left: 20px;
-            line-height: 1.8;
+        .session-ended p {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.5;
         }
 
-        .info-box ul li {
-            margin-bottom: 5px;
+        .success-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: #1a1a1a;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease-out;
+            z-index: 100;
         }
 
-        @media (max-width: 600px) {
-            .container {
-                padding: 30px 20px;
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
             }
-
-            .logo h1 {
-                font-size: 2em;
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
             }
+        }
 
-            .form-group textarea {
-                min-height: 120px;
+        .error-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4757;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease-out;
+            z-index: 100;
+        }
+
+        @media (max-width: 440px) {
+            body {
+                padding: 30px 15px;
+            }
+            
+            .header-text {
+                font-size: 14px;
+            }
+            
+            .message-area textarea {
+                height: 180px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container" id="app">
-        <div class="logo">
-            <h1>🎭 LUCA</h1>
-            <p>Anonymous Messages</p>
-        </div>
-
-        <div id="content">
-            <!-- Content will be injected here -->
-        </div>
+        <div id="content"></div>
     </div>
 
     <script>
         const API_URL = window.location.origin;
-        const sessionId = window.location.pathname.substring(1);
-
+        const sessionToken = window.location.pathname.substring(1);
         let isSubmitting = false;
 
         async function checkSessionStatus() {
             try {
-                const response = await fetch(`${API_URL}/api/session/${sessionId}/status`);
+                const response = await fetch(`${API_URL}/api/session/${sessionToken}/status`);
                 const data = await response.json();
-
                 if (!data.exists || !data.active) {
                     showSessionEnded();
                     return false;
                 }
-
                 return true;
             } catch (error) {
                 console.error('Error checking session:', error);
-                showError('Failed to connect to server. Please try again.');
+                showError('Failed to connect. Try again.');
                 return false;
             }
         }
@@ -271,98 +257,83 @@
         function showSessionEnded() {
             document.getElementById('content').innerHTML = `
                 <div class="session-ended">
-                    <div class="icon">😢</div>
-                    <h2>Oops!</h2>
-                    <p>This anonymous session has ended.</p>
-                    <p style="margin-top: 15px; font-size: 0.95em;">The admin has closed this session. No more messages can be sent.</p>
+                    <div class="icon">🔒</div>
+                    <h2>Session Ended</h2>
+                    <p>This anonymous Q&A session has ended or expired.</p>
+                    <p style="margin-top: 10px; opacity: 0.7;">Ask the admin to start a new one!</p>
                 </div>
             `;
         }
 
         function showError(message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-error';
-            alertDiv.textContent = message;
-
-            const content = document.getElementById('content');
-            content.insertBefore(alertDiv, content.firstChild);
-
-            setTimeout(() => alertDiv.remove(), 5000);
+            const existing = document.querySelector('.error-toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'error-toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
 
         function showSuccess(message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-success';
-            alertDiv.textContent = message;
-
-            const content = document.getElementById('content');
-            content.insertBefore(alertDiv, content.firstChild);
-
-            setTimeout(() => alertDiv.remove(), 5000);
+            const existing = document.querySelector('.success-toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'success-toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
 
         function updateCharCounter() {
             const textarea = document.getElementById('message');
-            const counter = document.getElementById('charCounter');
-            const length = textarea.value.length;
-
-            counter.textContent = `${length} / 1000 characters`;
-
-            if (length > 900) {
-                counter.className = 'char-counter error';
-            } else if (length > 750) {
-                counter.className = 'char-counter warning';
-            } else {
-                counter.className = 'char-counter';
+            const counter = document.getElementById('charCount');
+            if (textarea && counter) {
+                counter.textContent = `${textarea.value.length}/1000`;
             }
         }
 
         async function submitMessage(event) {
             event.preventDefault();
-
             if (isSubmitting) return;
 
             const textarea = document.getElementById('message');
             const message = textarea.value.trim();
 
             if (!message) {
-                showError('Please enter a message');
+                showError('Type a message first!');
                 return;
             }
 
             if (message.length > 1000) {
-                showError('Message is too long (max 1000 characters)');
+                showError('Message too long!');
                 return;
             }
 
             isSubmitting = true;
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Sending<span class="loading"></span>';
+            submitBtn.textContent = 'Sending...';
+            submitBtn.classList.add('sending');
 
             try {
                 const response = await fetch(`${API_URL}/api/message/submit`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        sessionId,
-                        message
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionToken, message })
                 });
 
                 const data = await response.json();
 
                 if (!response.ok) {
-                    if (data.error === 'Session has ended') {
+                    if (data.error === 'Session has ended' || data.error === 'Session has ended or expired') {
                         showSessionEnded();
                         return;
                     }
-                    throw new Error(data.error || 'Failed to send message');
+                    throw new Error(data.error || 'Failed to send');
                 }
 
-                showSuccess('Your anonymous message has been sent!');
+                showSuccess('Message sent! ✨');
                 textarea.value = '';
                 updateCharCounter();
 
@@ -371,46 +342,53 @@
             } finally {
                 isSubmitting = false;
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Send Anonymously';
+                submitBtn.textContent = 'Send!';
+                submitBtn.classList.remove('sending');
             }
         }
 
         function showMessageForm() {
             document.getElementById('content').innerHTML = `
-                <div class="info-box">
-                    <h3>📝 How it works:</h3>
-                    <ul>
-                        <li>Your message will be posted anonymously in the group</li>
-                        <li>Your identity remains completely hidden</li>
-                        <li>Keep it respectful and follow group rules</li>
-                    </ul>
+                <div class="header-card">
+                    <div class="avatar">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <span class="header-text">send me anonymous messages!</span>
                 </div>
 
-                <form id="messageForm" onsubmit="submitMessage(event)">
-                    <div class="form-group">
-                        <label for="message">Your Anonymous Message:</label>
+                <form id="messageForm" onsubmit="submitMessage(event)" style="width: 100%;">
+                    <div class="message-area">
                         <textarea
                             id="message"
-                            placeholder="Type your anonymous message here..."
+                            placeholder="type your message here..."
                             maxlength="1000"
                             oninput="updateCharCounter()"
                         ></textarea>
-                        <div id="charCounter" class="char-counter">0 / 1000 characters</div>
+                        <span id="charCount" class="char-count">0/1000</span>
+                        <span class="dice-icon">🎲</span>
                     </div>
 
-                    <button type="submit" class="btn" id="submitBtn">
-                        Send Anonymously
-                    </button>
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                        <div class="anonymous-label">
+                            <span>🔒</span>
+                            <span>anonymous q&a</span>
+                        </div>
+
+                        <button type="submit" class="send-btn" id="submitBtn">Send!</button>
+                    </div>
                 </form>
             `;
         }
 
-        // Initialize
         async function init() {
-            if (!sessionId) {
+            if (!sessionToken || sessionToken === '') {
                 document.getElementById('content').innerHTML = `
-                    <div class="alert alert-error">
-                        Invalid session link. Please use the link provided by the bot.
+                    <div class="session-ended">
+                        <div class="icon">❌</div>
+                        <h2>Invalid Link</h2>
+                        <p>Use the link provided by the bot.</p>
                     </div>
                 `;
                 return;
